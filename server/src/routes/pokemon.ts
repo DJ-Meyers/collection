@@ -15,7 +15,6 @@ const ALLOWED_SORT_COLUMNS = [
   "id",
   "species",
   "dex_number",
-  "generation",
   "nickname",
   "level",
   "nature",
@@ -67,10 +66,6 @@ pokemonRoutes.get("/filters", (c) => {
     .prepare("SELECT DISTINCT species FROM pokemon ORDER BY species")
     .all()
     .map((r: any) => r.species);
-  const generation = db
-    .prepare("SELECT DISTINCT generation FROM pokemon ORDER BY generation")
-    .all()
-    .map((r: any) => r.generation);
   const nature = db
     .prepare(
       "SELECT DISTINCT nature FROM pokemon WHERE nature IS NOT NULL ORDER BY nature"
@@ -104,7 +99,6 @@ pokemonRoutes.get("/filters", (c) => {
 
   return c.json({
     species,
-    generation,
     nature,
     ball,
     game_of_origin,
@@ -133,7 +127,6 @@ pokemonRoutes.get("/", (c) => {
   // Comma-separated multi-select filters
   const multiFilters: Record<string, string> = {
     species: "species",
-    generation: "generation",
     nature: "nature",
     ball: "poke_ball",
     game_of_origin: "game_of_origin",
@@ -212,13 +205,6 @@ pokemonRoutes.post("/", async (c) => {
       400
     );
   }
-  if (body.generation == null || typeof body.generation !== "number") {
-    return c.json(
-      { error: "generation is required and must be a number" },
-      400
-    );
-  }
-
   // Prepare values — convert arrays to JSON, booleans to 0/1
   const ribbons =
     Array.isArray(body.ribbons) ? JSON.stringify(body.ribbons) : "[]";
@@ -229,17 +215,14 @@ pokemonRoutes.post("/", async (c) => {
     "species",
     "dex_number",
     "form",
-    "generation",
     "nickname",
     "gender",
     "level",
     "nature",
-    "mint_nature",
     "ability",
     "is_hidden_ability",
     "ot_name",
     "ot_tid",
-    "ot_gender",
     "language_tag",
     "game_of_origin",
     "current_location",
@@ -302,17 +285,14 @@ pokemonRoutes.put("/:id", async (c) => {
     "species",
     "dex_number",
     "form",
-    "generation",
     "nickname",
     "gender",
     "level",
     "nature",
-    "mint_nature",
     "ability",
     "is_hidden_ability",
     "ot_name",
     "ot_tid",
-    "ot_gender",
     "language_tag",
     "game_of_origin",
     "current_location",

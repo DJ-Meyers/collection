@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Route } from "../routes/collection/route";
 import { NATURES, POKE_BALLS, LANGUAGES, GAMES } from "../lib/constants";
 
-const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export function FilterBar() {
   const search = Route.useSearch();
@@ -65,7 +64,6 @@ export function FilterBar() {
       search.search ||
       search.isShiny ||
       search.ball ||
-      search.generation ||
       moreFilterCount > 0
     );
   }, [search, moreFilterCount]);
@@ -139,31 +137,6 @@ export function FilterBar() {
             Clear all
           </button>
         )}
-      </div>
-
-      {/* Generation chips */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">
-          Gen:
-        </span>
-        {GENERATIONS.map((gen) => (
-          <button
-            key={gen}
-            onClick={() =>
-              setFilter(
-                "generation",
-                search.generation === gen ? undefined : gen,
-              )
-            }
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-              search.generation === gen
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {gen}
-          </button>
-        ))}
       </div>
 
       {/* Expandable more filters */}

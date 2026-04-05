@@ -10,7 +10,7 @@ import type { PokemonFilters } from "../../../shared/types";
 const collectionSearchSchema = z.object({
   search: z.string().optional(),
   species: z.string().optional(),
-  generation: z.coerce.number().optional(),
+
   ball: z.string().optional(),
   gameOfOrigin: z.string().optional(),
   currentLocation: z.string().optional(),
@@ -49,8 +49,7 @@ function toApiFilters(search: CollectionSearch): Partial<PokemonFilters> {
   const filters: Partial<PokemonFilters> = {};
   if (search.search) filters.search = search.search;
   if (search.species) filters.species = search.species;
-  if (search.generation !== undefined)
-    filters.generation = String(search.generation);
+
   if (search.ball) filters.ball = search.ball;
   if (search.gameOfOrigin) filters.game_of_origin = search.gameOfOrigin;
   if (search.currentLocation)
@@ -72,7 +71,6 @@ function hasActiveFilters(search: CollectionSearch): boolean {
   return !!(
     search.search ||
     search.species ||
-    search.generation !== undefined ||
     search.ball ||
     search.gameOfOrigin ||
     search.currentLocation ||

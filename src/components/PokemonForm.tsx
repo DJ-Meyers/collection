@@ -13,17 +13,17 @@ interface FormData {
   species: string;
   dex_number: string;
   form: string;
-  generation: string;
+
   nickname: string;
   gender: string;
   level: string;
   nature: string;
-  mint_nature: string;
+
   ability: string;
   is_hidden_ability: boolean;
   ot_name: string;
   ot_tid: string;
-  ot_gender: string;
+
   language_tag: string;
   game_of_origin: string;
   current_location: string;
@@ -42,17 +42,17 @@ function buildInitialForm(pokemon?: Pokemon): FormData {
     species: pokemon?.species ?? '',
     dex_number: pokemon?.dex_number?.toString() ?? '',
     form: pokemon?.form ?? '',
-    generation: pokemon?.generation?.toString() ?? '',
+
     nickname: pokemon?.nickname ?? '',
     gender: pokemon?.gender ?? '',
     level: pokemon?.level?.toString() ?? '',
     nature: pokemon?.nature ?? '',
-    mint_nature: pokemon?.mint_nature ?? '',
+
     ability: pokemon?.ability ?? '',
     is_hidden_ability: pokemon?.is_hidden_ability ?? false,
     ot_name: pokemon?.ot_name ?? '',
     ot_tid: pokemon?.ot_tid ?? '',
-    ot_gender: pokemon?.ot_gender ?? '',
+
     language_tag: pokemon?.language_tag ?? '',
     game_of_origin: pokemon?.game_of_origin ?? '',
     current_location: pokemon?.current_location ?? '',
@@ -72,17 +72,17 @@ function formDataToPayload(form: FormData) {
     species: form.species,
     dex_number: form.dex_number ? Number(form.dex_number) : 0,
     form: form.form || null,
-    generation: form.generation ? Number(form.generation) : 0,
+
     nickname: form.nickname || null,
     gender: form.gender || null,
     level: form.level ? Number(form.level) : null,
     nature: form.nature || null,
-    mint_nature: form.mint_nature || null,
+
     ability: form.ability || null,
     is_hidden_ability: form.is_hidden_ability,
     ot_name: form.ot_name || null,
     ot_tid: form.ot_tid || null,
-    ot_gender: form.ot_gender || null,
+
     language_tag: form.language_tag || null,
     game_of_origin: form.game_of_origin || null,
     current_location: form.current_location || null,
@@ -195,20 +195,6 @@ export function PokemonForm({ pokemon, onSuccess }: PokemonFormProps) {
             />
             {errors.form && <p className={errorClass}>{errors.form}</p>}
           </div>
-          <div>
-            <label className={labelClass}>
-              Generation <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={9}
-              className={inputClass}
-              value={form.generation}
-              onChange={(e) => updateField('generation', e.target.value)}
-            />
-            {errors.generation && <p className={errorClass}>{errors.generation}</p>}
-          </div>
         </div>
       </fieldset>
 
@@ -264,19 +250,6 @@ export function PokemonForm({ pokemon, onSuccess }: PokemonFormProps) {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Mint Nature</label>
-            <select
-              className={selectClass}
-              value={form.mint_nature}
-              onChange={(e) => updateField('mint_nature', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {NATURES.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className={labelClass}>Ability</label>
             <input
               type="text"
@@ -321,18 +294,6 @@ export function PokemonForm({ pokemon, onSuccess }: PokemonFormProps) {
               value={form.ot_tid}
               onChange={(e) => updateField('ot_tid', e.target.value)}
             />
-          </div>
-          <div>
-            <label className={labelClass}>OT Gender</label>
-            <select
-              className={selectClass}
-              value={form.ot_gender}
-              onChange={(e) => updateField('ot_gender', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              <option value="male">male</option>
-              <option value="female">female</option>
-            </select>
           </div>
           <div>
             <label className={labelClass}>Language</label>

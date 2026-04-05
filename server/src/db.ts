@@ -35,17 +35,17 @@ function migrate(db: Database.Database): void {
       species       TEXT NOT NULL,
       dex_number    INTEGER NOT NULL,
       form          TEXT,
-      generation    INTEGER NOT NULL,
+
       nickname      TEXT,
       gender        TEXT CHECK(gender IN ('male','female','genderless')),
       level         INTEGER CHECK(level BETWEEN 1 AND 100),
       nature        TEXT,
-      mint_nature   TEXT,
+
       ability       TEXT,
       is_hidden_ability BOOLEAN DEFAULT 0,
       ot_name       TEXT,
       ot_tid        TEXT,
-      ot_gender     TEXT CHECK(ot_gender IN ('male','female')),
+
       language_tag  TEXT,
       game_of_origin TEXT,
       current_location TEXT,

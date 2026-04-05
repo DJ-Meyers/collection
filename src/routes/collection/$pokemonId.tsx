@@ -147,7 +147,6 @@ function PokemonDetailPage() {
             <DetailField label="Species" value={pokemon.species} />
             <DetailField label="Dex #" value={pokemon.dex_number} />
             <DetailField label="Form" value={pokemon.form} />
-            <DetailField label="Generation" value={pokemon.generation} />
           </DetailGrid>
         </DetailSection>
 
@@ -157,7 +156,6 @@ function PokemonDetailPage() {
             <DetailField label="Gender" value={pokemon.gender} />
             <DetailField label="Level" value={pokemon.level} />
             <DetailField label="Nature" value={pokemon.nature} />
-            <DetailField label="Mint Nature" value={pokemon.mint_nature} />
             <DetailField
               label="Ability"
               value={
@@ -175,7 +173,6 @@ function PokemonDetailPage() {
           <DetailGrid>
             <DetailField label="OT Name" value={pokemon.ot_name} />
             <DetailField label="TID" value={pokemon.ot_tid} />
-            <DetailField label="OT Gender" value={pokemon.ot_gender} />
             <DetailField label="Language" value={pokemon.language_tag} />
             <DetailField label="Game of Origin" value={pokemon.game_of_origin} />
           </DetailGrid>
