@@ -1,7 +1,9 @@
-export const queryKeys = {
-  pokemon: {
-    all: ["pokemon"] as const,
-    list: () => [...queryKeys.pokemon.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.pokemon.all, "detail", id] as const,
-  },
-} as const;
+export const pokemonKeys = {
+  all: ["pokemon"] as const,
+  lists: () => [...pokemonKeys.all, "list"] as const,
+  list: (filters: Record<string, unknown>) =>
+    [...pokemonKeys.lists(), filters] as const,
+  details: () => [...pokemonKeys.all, "detail"] as const,
+  detail: (id: number) => [...pokemonKeys.details(), id] as const,
+  filters: () => [...pokemonKeys.all, "filters"] as const,
+};

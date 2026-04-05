@@ -13,9 +13,17 @@ function RootLayout() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 py-3">
-            <Link to="/" className="text-xl font-bold text-gray-900">
-              Pokemon Collection Tracker
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link to="/" className="text-xl font-bold text-gray-900">
+                Pokemon Collection Tracker
+              </Link>
+              <Link
+                to="/collection"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Collection
+              </Link>
+            </div>
           </div>
         </nav>
         <main className="max-w-7xl mx-auto px-4 py-6">
