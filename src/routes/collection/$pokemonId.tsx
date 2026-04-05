@@ -3,6 +3,8 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { usePokemon } from '../../api/queries';
 import { useDeletePokemon } from '../../api/mutations';
 import { PokemonForm } from '../../components/PokemonForm';
+import { Badge } from '../../components/ui/Badge';
+import { Sprite } from '../../components/ui/Sprite';
 
 export const Route = createFileRoute('/collection/$pokemonId')({
   component: PokemonDetailPage,
@@ -17,8 +19,9 @@ function PokemonDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500 text-lg">Loading...</p>
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mb-3" />
+        <p className="text-gray-500 text-sm">Loading...</p>
       </div>
     );
   }
@@ -87,40 +90,48 @@ function PokemonDetailPage() {
         </Link>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {pokemon.nickname ? (
-            <>
-              {pokemon.nickname}{' '}
-              <span className="text-lg font-normal text-gray-500">
-                ({pokemon.species})
-              </span>
-            </>
-          ) : (
-            pokemon.species
-          )}
-          {pokemon.is_shiny && (
-            <span className="ml-2 inline-block rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">
-              Shiny
-            </span>
-          )}
-        </h1>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
-          >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </button>
+      <div className="flex items-start gap-4 mb-6">
+        <div className={`flex-shrink-0 rounded-lg p-2 ${pokemon.is_shiny ? 'bg-yellow-50 ring-1 ring-yellow-200' : 'bg-gray-50 ring-1 ring-gray-200'}`}>
+          <Sprite dexNumber={pokemon.dex_number} shiny={pokemon.is_shiny} size={96} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {pokemon.nickname ? (
+                <>
+                  {pokemon.nickname}{' '}
+                  <span className="text-lg font-normal text-gray-500">
+                    ({pokemon.species})
+                  </span>
+                </>
+              ) : (
+                pokemon.species
+              )}
+            </h1>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            {pokemon.is_shiny && <Badge variant="shiny">&#x2728; Shiny</Badge>}
+            {pokemon.is_event && <Badge variant="event">Event</Badge>}
+            {pokemon.is_alpha && <Badge variant="alpha">Alpha</Badge>}
+            {pokemon.is_hidden_ability && pokemon.ability && <Badge variant="ha">HA</Badge>}
+          </div>
         </div>
       </div>
 

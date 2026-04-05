@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet, useMatch } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, Outlet, useMatch, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { usePokemonList } from "../../api/queries";
 import { PokemonTable } from "../../components/PokemonTable";
 import { FilterBar } from "../../components/FilterBar";
+import { PokemonForm } from "../../components/PokemonForm";
 import type { PokemonFilters } from "../../../shared/types";
 
 const collectionSearchSchema = z.object({
@@ -66,20 +68,74 @@ function toApiFilters(search: CollectionSearch): Partial<PokemonFilters> {
   return filters;
 }
 
+function hasActiveFilters(search: CollectionSearch): boolean {
+  return !!(
+    search.search ||
+    search.species ||
+    search.generation !== undefined ||
+    search.ball ||
+    search.gameOfOrigin ||
+    search.currentLocation ||
+    search.languageTag ||
+    search.nature ||
+    search.isShiny !== undefined ||
+    search.isEvent !== undefined ||
+    search.isAlpha !== undefined ||
+    search.isHiddenAbility !== undefined
+  );
+}
+
 function CollectionPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/collection" });
   const apiFilters = toApiFilters(search);
   const { data: pokemon = [], isLoading } = usePokemonList(apiFilters);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const filtersActive = hasActiveFilters(search);
+
+  const clearAllFilters = () => {
+    navigate({
+      search: { sortBy: "dex_number", sortOrder: "asc" },
+    });
+  };
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Collection</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">My Collection</h1>
+        <button
+          type="button"
+          onClick={() => setShowAddForm((prev) => !prev)}
+          className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
+            showAddForm
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
+        >
+          {showAddForm ? "Cancel" : "+ Add Pokemon"}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Add New Pokemon
+          </h2>
+          <PokemonForm
+            onSuccess={() => setShowAddForm(false)}
+          />
+        </div>
+      )}
+
       <FilterBar />
       <PokemonTable
         pokemon={pokemon}
         isLoading={isLoading}
         sortBy={search.sortBy}
         sortOrder={search.sortOrder}
+        hasFilters={filtersActive}
+        onClearFilters={clearAllFilters}
       />
     </div>
   );
