@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as CollectionRouteRouteImport } from './routes/collection/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CollectionPokemonIdRouteImport } from './routes/collection/$pokemonId'
 
 const CollectionRouteRoute = CollectionRouteRouteImport.update({
   id: '/collection',
@@ -22,31 +23,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CollectionPokemonIdRoute = CollectionPokemonIdRouteImport.update({
+  id: '/$pokemonId',
+  path: '/$pokemonId',
+  getParentRoute: () => CollectionRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/collection': typeof CollectionRouteRoute
+  '/collection': typeof CollectionRouteRouteWithChildren
+  '/collection/$pokemonId': typeof CollectionPokemonIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/collection': typeof CollectionRouteRoute
+  '/collection': typeof CollectionRouteRouteWithChildren
+  '/collection/$pokemonId': typeof CollectionPokemonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/collection': typeof CollectionRouteRoute
+  '/collection': typeof CollectionRouteRouteWithChildren
+  '/collection/$pokemonId': typeof CollectionPokemonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collection'
+  fullPaths: '/' | '/collection' | '/collection/$pokemonId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collection'
-  id: '__root__' | '/' | '/collection'
+  to: '/' | '/collection' | '/collection/$pokemonId'
+  id: '__root__' | '/' | '/collection' | '/collection/$pokemonId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CollectionRouteRoute: typeof CollectionRouteRoute
+  CollectionRouteRoute: typeof CollectionRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +74,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/collection/$pokemonId': {
+      id: '/collection/$pokemonId'
+      path: '/$pokemonId'
+      fullPath: '/collection/$pokemonId'
+      preLoaderRoute: typeof CollectionPokemonIdRouteImport
+      parentRoute: typeof CollectionRouteRoute
+    }
   }
 }
 
+interface CollectionRouteRouteChildren {
+  CollectionPokemonIdRoute: typeof CollectionPokemonIdRoute
+}
+
+const CollectionRouteRouteChildren: CollectionRouteRouteChildren = {
+  CollectionPokemonIdRoute: CollectionPokemonIdRoute,
+}
+
+const CollectionRouteRouteWithChildren = CollectionRouteRoute._addFileChildren(
+  CollectionRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CollectionRouteRoute: CollectionRouteRoute,
+  CollectionRouteRoute: CollectionRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
