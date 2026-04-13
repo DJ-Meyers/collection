@@ -1,19 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from './client';
 import { pokemonKeys } from './queryKeys';
-import type { Pokemon, CreatePokemon, UpdatePokemon } from '../../shared/types';
+import { create, update, remove, loadCollection } from '../store/collection';
+import type { Pokemon, CreatePokemon, UpdatePokemon } from '../data/types';
 
 export function useCreatePokemon() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreatePokemon) =>
-      apiFetch<Pokemon>('/pokemon', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async (data: CreatePokemon): Promise<Pokemon> => {
+      await loadCollection();
+      return create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
     },
   });
 }
@@ -22,14 +22,14 @@ export function useUpdatePokemon() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdatePokemon }) =>
-      apiFetch<Pokemon>(`/pokemon/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async ({ id, data }: { id: number; data: UpdatePokemon }): Promise<Pokemon> => {
+      await loadCollection();
+      return update(id, data);
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: pokemonKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
     },
   });
 }
@@ -38,12 +38,14 @@ export function useDeletePokemon() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch<void>(`/pokemon/${id}`, {
-        method: 'DELETE',
-      }),
-    onSuccess: () => {
+    mutationFn: async (id: number): Promise<void> => {
+      await loadCollection();
+      remove(id);
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: pokemonKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
     },
   });
 }

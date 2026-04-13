@@ -1,468 +1,690 @@
-import { useState } from 'react';
-import type { Pokemon } from '../../shared/types';
-import { createPokemonSchema } from '../../shared/schemas';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from '@tanstack/react-form';
+import { useStore } from '@tanstack/react-store';
+import type { Pokemon } from '../data/types';
+import { createPokemonSchema } from '../data/schemas';
 import { useCreatePokemon, useUpdatePokemon } from '../api/mutations';
-import { NATURES, POKE_BALLS, LANGUAGES, GAMES, GENDERS } from '../lib/constants';
+import { NATURES, LANGUAGES, GENDERS, GAME_LOCATIONS } from '../data/constants';
+import { getSpeciesInfo, getShowdownSpriteUrl, getBallSpriteUrl, type SpeciesInfo } from '../data/pokemon-dex';
+import { Badge, BADGE_ICONS, OriginMarkBadge } from './ui/Badge';
+import { Card, useStickyOffset } from './layout';
+import { BallSelect } from './ui/form/BallSelect';
+import { LocationSelect } from './ui/form/LocationSelect';
+import { OriginSelect } from './ui/form/OriginSelect';
+import { SelectField, type SelectOption } from './ui/form/SelectField';
+import { SpeciesTypeahead } from './ui/form/SpeciesTypeahead';
+import { TextField } from './ui/form/TextField';
+import { inputClass, labelClass, errorClass, selectClass } from './ui/form/styles';
 
 interface PokemonFormProps {
   pokemon?: Pokemon;
+  formId?: string;
   onSuccess?: () => void;
 }
 
-interface FormData {
+interface FormValues {
   species: string;
-  dex_number: string;
-  form: string;
+  dex_number: number;
+  form: string | null;
 
-  nickname: string;
-  gender: string;
-  level: string;
-  nature: string;
+  nickname: string | null;
+  gender: string | null;
+  level: number | null;
+  nature: string | null;
 
-  ability: string;
+  ability: string | null;
   is_hidden_ability: boolean;
-  ot_name: string;
-  ot_tid: string;
+  ot_name: string | null;
+  ot_tid: string | null;
 
-  language_tag: string;
-  game_of_origin: string;
-  current_location: string;
+  language_tag: string | null;
+  origin_mark: string | null;
+  current_location: string | null;
   is_shiny: boolean;
   is_event: boolean;
   is_alpha: boolean;
-  is_gigantamax: boolean;
-  poke_ball: string;
-  ribbons: string;
-  marks: string;
-  notes: string;
+  is_available_for_trade: boolean;
+  poke_ball: string | null;
+  ribbons: string[];
+  marks: string[];
+  tags: string[];
+  notes: string | null;
 }
 
-function buildInitialForm(pokemon?: Pokemon): FormData {
+export interface PokemonPreviewProps {
+  speciesValue: string;
+  formValue: string | null;
+  nickname: string | null;
+  spriteUrl: string;
+  ballSpriteUrl: string;
+  pokeBall: string | null;
+  isShiny: boolean;
+  isAlpha: boolean;
+  isEvent: boolean;
+  isAvailableForTrade: boolean;
+  locationBoxArt: string | null;
+  currentLocation: string | null;
+  originMark: string | null;
+}
+
+export function PokemonPreview({
+  speciesValue,
+  formValue,
+  nickname,
+  spriteUrl,
+  ballSpriteUrl,
+  pokeBall,
+  isShiny,
+  isAlpha,
+  isEvent,
+  isAvailableForTrade,
+  locationBoxArt,
+  currentLocation,
+  originMark,
+}: PokemonPreviewProps) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-lg bg-gray-50 border border-gray-100">
+        {spriteUrl ? (
+          <img
+            src={spriteUrl}
+            alt={`${speciesValue}${formValue ? ` (${formValue})` : ''}`}
+            className="w-14 h-14"
+            style={{ imageRendering: 'pixelated' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <span className="text-gray-300 text-2xl">?</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        {nickname && (
+          <p className="text-sm font-semibold text-gray-800 truncate">"{nickname}"</p>
+        )}
+        <p className={`text-gray-500 truncate ${nickname ? 'text-xs' : 'text-sm font-semibold text-gray-800'}`}>
+          {speciesValue || 'No species selected'}
+          {formValue && <span className="text-gray-500 font-normal"> ({formValue})</span>}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {ballSpriteUrl && (
+          <div className="flex items-center justify-center w-8 h-8" title={pokeBall ?? ''}>
+            <img
+              src={ballSpriteUrl}
+              alt={pokeBall ?? ''}
+              className="w-7 h-7"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+        {isShiny && <Badge variant="shiny" icon={BADGE_ICONS.shiny} iconOnly size="md" />}
+        {isAlpha && <Badge variant="alpha" icon={BADGE_ICONS.alpha} iconOnly size="md" />}
+        {isEvent && <Badge variant="event" icon={BADGE_ICONS.event} iconOnly size="md" />}
+
+        {isAvailableForTrade && <Badge variant="trade" icon={BADGE_ICONS.trade} iconOnly size="md" />}
+        {locationBoxArt && (
+          <div className="flex items-center justify-center w-8 h-8" title={currentLocation ?? ''}>
+            <img
+              src={locationBoxArt}
+              alt={currentLocation ?? ''}
+              className="w-7 h-7 rounded object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+        {originMark && <OriginMarkBadge value={originMark} showLabel={false} size="md" />}
+      </div>
+    </div>
+  );
+}
+
+const FormHeader = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
+  function FormHeader({ children }, ref) {
+    const stickyOffset = useStickyOffset();
+    return (
+      <div ref={ref} className="sticky z-10 bg-gray-50 pb-2" style={{ top: stickyOffset }}>
+        <Card className="px-4 py-3">
+          {children}
+        </Card>
+      </div>
+    );
+  },
+);
+
+function buildDefaultValues(pokemon?: Pokemon): FormValues {
   return {
     species: pokemon?.species ?? '',
-    dex_number: pokemon?.dex_number?.toString() ?? '',
-    form: pokemon?.form ?? '',
+    dex_number: pokemon?.dex_number ?? 0,
+    form: pokemon?.form ?? null,
 
-    nickname: pokemon?.nickname ?? '',
-    gender: pokemon?.gender ?? '',
-    level: pokemon?.level?.toString() ?? '',
-    nature: pokemon?.nature ?? '',
+    nickname: pokemon?.nickname ?? null,
+    gender: pokemon?.gender ?? 'Male',
+    level: pokemon?.level ?? 50,
+    nature: pokemon?.nature ?? 'Jolly',
 
-    ability: pokemon?.ability ?? '',
+    ability: pokemon?.ability ?? null,
     is_hidden_ability: pokemon?.is_hidden_ability ?? false,
-    ot_name: pokemon?.ot_name ?? '',
-    ot_tid: pokemon?.ot_tid ?? '',
+    ot_name: pokemon?.ot_name ?? null,
+    ot_tid: pokemon?.ot_tid ?? null,
 
-    language_tag: pokemon?.language_tag ?? '',
-    game_of_origin: pokemon?.game_of_origin ?? '',
-    current_location: pokemon?.current_location ?? '',
+    language_tag: pokemon?.language_tag ?? 'ENG',
+    origin_mark: pokemon?.origin_mark ?? null,
+    current_location: pokemon?.current_location ?? null,
     is_shiny: pokemon?.is_shiny ?? false,
     is_event: pokemon?.is_event ?? false,
     is_alpha: pokemon?.is_alpha ?? false,
-    is_gigantamax: pokemon?.is_gigantamax ?? false,
-    poke_ball: pokemon?.poke_ball ?? '',
-    ribbons: pokemon?.ribbons?.join(', ') ?? '',
-    marks: pokemon?.marks?.join(', ') ?? '',
-    notes: pokemon?.notes ?? '',
+
+    is_available_for_trade: pokemon?.is_available_for_trade ?? false,
+    poke_ball: pokemon?.poke_ball ?? 'Poke Ball',
+    ribbons: pokemon?.ribbons ?? [],
+    marks: pokemon?.marks ?? [],
+    tags: pokemon?.tags ?? [],
+    notes: pokemon?.notes ?? null,
   };
 }
 
-function formDataToPayload(form: FormData) {
-  return {
-    species: form.species,
-    dex_number: form.dex_number ? Number(form.dex_number) : 0,
-    form: form.form || null,
-
-    nickname: form.nickname || null,
-    gender: form.gender || null,
-    level: form.level ? Number(form.level) : null,
-    nature: form.nature || null,
-
-    ability: form.ability || null,
-    is_hidden_ability: form.is_hidden_ability,
-    ot_name: form.ot_name || null,
-    ot_tid: form.ot_tid || null,
-
-    language_tag: form.language_tag || null,
-    game_of_origin: form.game_of_origin || null,
-    current_location: form.current_location || null,
-    is_shiny: form.is_shiny,
-    is_event: form.is_event,
-    is_alpha: form.is_alpha,
-    is_gigantamax: form.is_gigantamax,
-    poke_ball: form.poke_ball || null,
-    ribbons: form.ribbons ? form.ribbons.split(',').map((s) => s.trim()).filter(Boolean) : [],
-    marks: form.marks ? form.marks.split(',').map((s) => s.trim()).filter(Boolean) : [],
-    notes: form.notes || null,
-  };
-}
-
-export function PokemonForm({ pokemon, onSuccess }: PokemonFormProps) {
+export function PokemonForm({ pokemon, formId, onSuccess }: PokemonFormProps) {
   const isEdit = !!pokemon;
-  const [form, setForm] = useState<FormData>(() => buildInitialForm(pokemon));
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
   const createMutation = useCreatePokemon();
   const updateMutation = useUpdatePokemon();
-
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
-  function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-  }
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErrors({});
-
-    const payload = formDataToPayload(form);
-    const result = createPokemonSchema.safeParse(payload);
-
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of result.error.issues) {
-        const key = issue.path[0]?.toString();
-        if (key && !fieldErrors[key]) {
-          fieldErrors[key] = issue.message;
-        }
+  const form = useForm({
+    defaultValues: buildDefaultValues(pokemon),
+    onSubmit: ({ value }) => {
+      const result = createPokemonSchema.safeParse(value);
+      if (!result.success) {
+        setValidationErrors(result.error.issues.map((i) => i.message));
+        return;
       }
-      setErrors(fieldErrors);
-      return;
-    }
+      setValidationErrors([]);
 
-    if (isEdit && pokemon) {
-      updateMutation.mutate(
-        { id: pokemon.id, data: result.data },
-        { onSuccess },
-      );
-    } else {
-      createMutation.mutate(result.data, { onSuccess });
-    }
+      if (isEdit && pokemon) {
+        updateMutation.mutate(
+          { id: pokemon.id, data: result.data },
+          { onSuccess },
+        );
+      } else {
+        createMutation.mutate(result.data, { onSuccess });
+      }
+    },
+  });
+
+  const speciesValue = useStore(form.store, (s) => s.values.species);
+  const formValue = useStore(form.store, (s) => s.values.form);
+  const isShiny = useStore(form.store, (s) => s.values.is_shiny);
+  const nickname = useStore(form.store, (s) => s.values.nickname);
+  const pokeBall = useStore(form.store, (s) => s.values.poke_ball);
+  const isAlpha = useStore(form.store, (s) => s.values.is_alpha);
+  const isEvent = useStore(form.store, (s) => s.values.is_event);
+
+  const isAvailableForTrade = useStore(form.store, (s) => s.values.is_available_for_trade);
+  const originMark = useStore(form.store, (s) => s.values.origin_mark);
+  const currentLocation = useStore(form.store, (s) => s.values.current_location);
+  const ability = useStore(form.store, (s) => s.values.ability);
+
+  const speciesInfo: SpeciesInfo | null = useMemo(
+    () => (speciesValue ? getSpeciesInfo(speciesValue, formValue) : null),
+    [speciesValue, formValue],
+  );
+
+  const availableAbilities = useMemo(() => speciesInfo?.abilities ?? [], [speciesInfo]);
+  const availableFormes = useMemo(() => speciesInfo?.formes ?? [], [speciesInfo]);
+  const spriteUrl = useMemo(
+    () => (speciesInfo ? getShowdownSpriteUrl(speciesInfo.name, formValue || undefined, isShiny) : ''),
+    [speciesInfo, formValue, isShiny],
+  );
+
+  const natureOptions: SelectOption[] = useMemo(
+    () => NATURES.map((n) => ({ value: n, label: n })),
+    [],
+  );
+
+  const genderOptions: SelectOption[] = useMemo(
+    () => GENDERS.map((g) => ({ value: g, label: g })),
+    [],
+  );
+
+  const languageOptions: SelectOption[] = useMemo(
+    () => LANGUAGES.map((l) => ({ value: l, label: l })),
+    [],
+  );
+
+  function handleSpeciesSelect(species: { name: string; num: number }) {
+    form.setFieldValue('species', species.name);
+    form.setFieldValue('dex_number', species.num);
+    form.setFieldValue('form', null);
+    const info = getSpeciesInfo(species.name);
+    const firstAbility = info?.abilities[0];
+    form.setFieldValue('ability', firstAbility?.name ?? null);
+    form.setFieldValue('is_hidden_ability', firstAbility?.isHidden ?? false);
   }
 
-  const inputClass =
-    'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
-  const selectClass = inputClass;
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
-  const errorClass = 'mt-1 text-xs text-red-600';
+  function handleFormChange(formeName: string) {
+    const newForm = formeName || null;
+    form.setFieldValue('form', newForm);
+    // Re-derive abilities for the new form and reset to the first legal ability
+    if (!speciesValue) return;
+    const info = getSpeciesInfo(speciesValue, newForm);
+    const firstAbility = info?.abilities[0];
+    form.setFieldValue('ability', firstAbility?.name ?? null);
+    form.setFieldValue('is_hidden_ability', firstAbility?.isHidden ?? false);
+  }
+
+  function handleAbilityChange(abilityName: string) {
+    const abilityInfo = availableAbilities.find((a) => a.name === abilityName);
+    form.setFieldValue('ability', abilityName || null);
+    form.setFieldValue('is_hidden_ability', abilityInfo?.isHidden ?? false);
+  }
+
+  const [sectionTop, setSectionTop] = useState(53);
+  const previewNodeRef = useRef<HTMLDivElement | null>(null);
+  const previewRef = useCallback((node: HTMLDivElement | null) => {
+    previewNodeRef.current = node;
+  }, []);
+
+  useEffect(() => {
+    const node = previewNodeRef.current;
+    if (!node) return;
+    const update = () => {
+      const style = getComputedStyle(node);
+      const top = parseFloat(style.top) || 0;
+      const marginTop = parseFloat(style.marginTop) || 0;
+      setSectionTop(top + marginTop + node.offsetHeight);
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
+
   const sectionClass = 'space-y-4';
-  const sectionTitleClass = 'text-lg font-semibold text-gray-800 border-b pb-1';
+  const sectionTitleClass =
+    'sticky z-[5] pt-6 -mt-6 bg-gray-50 text-lg font-semibold text-gray-800 border-b pb-1';
+
+  const ballSpriteUrl = pokeBall ? getBallSpriteUrl(pokeBall) : '';
+  const locationBoxArt = useMemo(
+    () => GAME_LOCATIONS.find((g) => g.name === currentLocation)?.boxArt ?? null,
+    [currentLocation],
+  );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
-      {/* Identity */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Identity</legend>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>
-              Species <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.species}
-              onChange={(e) => updateField('species', e.target.value)}
-            />
-            {errors.species && <p className={errorClass}>{errors.species}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>
-              Dex Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              className={inputClass}
-              value={form.dex_number}
-              onChange={(e) => updateField('dex_number', e.target.value)}
-            />
-            {errors.dex_number && <p className={errorClass}>{errors.dex_number}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>Form</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.form}
-              onChange={(e) => updateField('form', e.target.value)}
-            />
-            {errors.form && <p className={errorClass}>{errors.form}</p>}
-          </div>
-        </div>
-      </fieldset>
+    <form
+      id={formId}
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.handleSubmit();
+      }}
+      className="space-y-8"
+    >
+      <FormHeader ref={previewRef}>
+        <PokemonPreview
+          speciesValue={speciesValue}
+          formValue={formValue}
+          nickname={nickname}
+          spriteUrl={spriteUrl}
+          ballSpriteUrl={ballSpriteUrl}
+          pokeBall={pokeBall}
+          isShiny={isShiny}
+          isAlpha={isAlpha}
+          isEvent={isEvent}
 
-      {/* Attributes */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Attributes</legend>
+          isAvailableForTrade={isAvailableForTrade}
+          locationBoxArt={locationBoxArt}
+          currentLocation={currentLocation}
+          originMark={originMark}
+        />
+      </FormHeader>
+
+      {/* Identity */}
+      <div className={sectionClass}>
+        <div className={sectionTitleClass} style={{ top: sectionTop }}>Identity</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Nickname</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.nickname}
-              onChange={(e) => updateField('nickname', e.target.value)}
-            />
+            <form.Field name="species">
+              {(field) => (
+                <>
+                  <label className={labelClass}>
+                    Species <span className="text-red-500">*</span>
+                  </label>
+                  <SpeciesTypeahead
+                    className={inputClass}
+                    value={field.state.value}
+                    onChange={(v) => field.handleChange(v)}
+                    onSelect={handleSpeciesSelect}
+                    placeholder="Search by name or dex number"
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className={errorClass}>{field.state.meta.errors[0]}</p>
+                  )}
+                </>
+              )}
+            </form.Field>
           </div>
           <div>
-            <label className={labelClass}>Gender</label>
-            <select
-              className={selectClass}
-              value={form.gender}
-              onChange={(e) => updateField('gender', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {GENDERS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+            <form.Field name="nickname">
+              {(field) => (
+                <TextField
+                  label="Nickname"
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                />
+              )}
+            </form.Field>
           </div>
           <div>
-            <label className={labelClass}>Level</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              className={inputClass}
-              value={form.level}
-              onChange={(e) => updateField('level', e.target.value)}
-            />
-            {errors.level && <p className={errorClass}>{errors.level}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>Nature</label>
-            <select
-              className={selectClass}
-              value={form.nature}
-              onChange={(e) => updateField('nature', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {NATURES.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+            <form.Field name="form">
+              {(field) => (
+                <>
+                  <label className={labelClass}>Form</label>
+                  <select
+                    className={selectClass}
+                    value={field.state.value ?? ''}
+                    onChange={(e) => handleFormChange(e.target.value)}
+                    disabled={availableFormes.length === 0}
+                  >
+                    <option value="">{availableFormes.length > 0 ? 'Base form' : 'No alternate forms'}</option>
+                    {availableFormes.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                  {field.state.meta.errors.length > 0 && (
+                    <p className={errorClass}>{field.state.meta.errors[0]}</p>
+                  )}
+                </>
+              )}
+            </form.Field>
           </div>
           <div>
             <label className={labelClass}>Ability</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.ability}
-              onChange={(e) => updateField('ability', e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 pt-6">
-            <input
-              type="checkbox"
-              id="is_hidden_ability"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={form.is_hidden_ability}
-              onChange={(e) => updateField('is_hidden_ability', e.target.checked)}
-            />
-            <label htmlFor="is_hidden_ability" className="text-sm font-medium text-gray-700">
-              Hidden Ability
-            </label>
+            {availableAbilities.length > 0 ? (
+              <select
+                className={selectClass}
+                value={ability ?? ''}
+                onChange={(e) => handleAbilityChange(e.target.value)}
+              >
+                <option value="">-- Select --</option>
+                {availableAbilities.map((a) => (
+                  <option key={a.name} value={a.name}>
+                    {a.name}{a.isHidden ? ' (Hidden)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <form.Field name="ability">
+                {(field) => (
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value || null)}
+                    placeholder={speciesInfo ? 'No abilities found' : 'Select a species first'}
+                    disabled={!!speciesInfo}
+                  />
+                )}
+              </form.Field>
+            )}
           </div>
         </div>
-      </fieldset>
+      </div>
+
+      {/* Attributes */}
+      <div className={sectionClass}>
+        <div className={sectionTitleClass} style={{ top: sectionTop }}>Attributes</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <form.Field name="poke_ball">
+              {(field) => (
+                <BallSelect
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v || null)}
+                />
+              )}
+            </form.Field>
+          </div>
+          <div>
+            <form.Field name="nature">
+              {(field) => (
+                <SelectField
+                  label="Nature"
+                  options={natureOptions}
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v || null)}
+                />
+              )}
+            </form.Field>
+          </div>
+          <div>
+            <form.Field name="gender">
+              {(field) => (
+                <SelectField
+                  label="Gender"
+                  options={genderOptions}
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v || null)}
+                />
+              )}
+            </form.Field>
+          </div>
+          <div>
+            <form.Field name="level">
+              {(field) => (
+                <TextField
+                  label="Level"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  error={field.state.meta.errors[0]}
+                />
+              )}
+            </form.Field>
+          </div>
+          <div className="col-span-2 grid grid-cols-4 gap-4">
+            {(['is_shiny', 'is_event', 'is_alpha', 'is_available_for_trade'] as const).map((name) => (
+              <div key={name} className="flex items-center gap-2">
+                <form.Field name={name}>
+                  {(field) => (
+                    <>
+                      <input
+                        type="checkbox"
+                        id={name}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.checked)}
+                      />
+                      <label htmlFor={name} className="text-sm font-medium text-gray-700">
+                        {name === 'is_shiny' ? 'Shiny' : name === 'is_event' ? 'Event' : name === 'is_alpha' ? 'Alpha' : 'For Trade'}
+                      </label>
+                    </>
+                  )}
+                </form.Field>
+              </div>
+            ))}
+          </div>
+          <div>
+            <form.Field name="ribbons">
+              {(field) => (
+                <>
+                  <label className={labelClass}>Ribbons (comma-separated)</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={field.state.value.join(', ')}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
+                      )
+                    }
+                    placeholder="e.g. Champion, Tower Master"
+                  />
+                </>
+              )}
+            </form.Field>
+          </div>
+          <div>
+            <form.Field name="marks">
+              {(field) => (
+                <>
+                  <label className={labelClass}>Marks (comma-separated)</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={field.state.value.join(', ')}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
+                      )
+                    }
+                    placeholder="e.g. Lunchtime Mark, Sleepy Mark"
+                  />
+                </>
+              )}
+            </form.Field>
+          </div>
+          <div className="col-span-2">
+            <form.Field name="tags">
+              {(field) => {
+                const [tagsTouched, setTagsTouched] = useState(false);
+                const hasError = tagsTouched && field.state.value.some(
+                  (t) => !/^[a-z]([a-z-]*[a-z])?$/.test(t),
+                );
+                return (
+                  <>
+                    <label className={labelClass}>Tags (comma-separated)</label>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={field.state.value.join(', ')}
+                      onChange={(e) =>
+                        field.handleChange(
+                          e.target.value ? e.target.value.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) : [],
+                        )
+                      }
+                      onBlur={() => setTagsTouched(true)}
+                      placeholder="e.g. battle-ready, available-for-trade"
+                    />
+                    {hasError && (
+                      <p className={errorClass}>
+                        Tags must be lowercase letters and dashes, starting and ending with a letter.
+                      </p>
+                    )}
+                  </>
+                );
+              }}
+            </form.Field>
+          </div>
+        </div>
+      </div>
 
       {/* Origin */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Origin</legend>
+      <div className={sectionClass}>
+        <div className={sectionTitleClass} style={{ top: sectionTop }}>Origin</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>OT Name</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.ot_name}
-              onChange={(e) => updateField('ot_name', e.target.value)}
-            />
+            <form.Field name="ot_name">
+              {(field) => (
+                <TextField
+                  label="OT Name"
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                />
+              )}
+            </form.Field>
           </div>
           <div>
-            <label className={labelClass}>TID</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.ot_tid}
-              onChange={(e) => updateField('ot_tid', e.target.value)}
-            />
+            <form.Field name="ot_tid">
+              {(field) => (
+                <TextField
+                  label="Trainer ID"
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                />
+              )}
+            </form.Field>
           </div>
           <div>
-            <label className={labelClass}>Language</label>
-            <select
-              className={selectClass}
-              value={form.language_tag}
-              onChange={(e) => updateField('language_tag', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>{l}</option>
-              ))}
-            </select>
+            <form.Field name="language_tag">
+              {(field) => (
+                <SelectField
+                  label="Language"
+                  options={languageOptions}
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v || null)}
+                />
+              )}
+            </form.Field>
           </div>
-          <div className="col-span-2">
-            <label className={labelClass}>Game of Origin</label>
-            <select
-              className={selectClass}
-              value={form.game_of_origin}
-              onChange={(e) => updateField('game_of_origin', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {GAMES.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+          <div>
+            <form.Field name="origin_mark">
+              {(field) => (
+                <OriginSelect
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v || null)}
+                />
+              )}
+            </form.Field>
           </div>
         </div>
-      </fieldset>
+      </div>
 
       {/* Location */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Location</legend>
+      <div className={sectionClass}>
+        <div className={sectionTitleClass} style={{ top: sectionTop }}>Location</div>
         <div>
-          <label className={labelClass}>Current Location</label>
-          <input
-            type="text"
-            className={inputClass}
-            value={form.current_location}
-            onChange={(e) => updateField('current_location', e.target.value)}
-          />
+          <form.Field name="current_location">
+            {(field) => (
+              <LocationSelect
+                value={field.state.value ?? ''}
+                onChange={(v) => field.handleChange(v || null)}
+              />
+            )}
+          </form.Field>
         </div>
-      </fieldset>
-
-      {/* Special Markers */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Special Markers</legend>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_shiny"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={form.is_shiny}
-              onChange={(e) => updateField('is_shiny', e.target.checked)}
-            />
-            <label htmlFor="is_shiny" className="text-sm font-medium text-gray-700">
-              Shiny
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_event"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={form.is_event}
-              onChange={(e) => updateField('is_event', e.target.checked)}
-            />
-            <label htmlFor="is_event" className="text-sm font-medium text-gray-700">
-              Event
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_alpha"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={form.is_alpha}
-              onChange={(e) => updateField('is_alpha', e.target.checked)}
-            />
-            <label htmlFor="is_alpha" className="text-sm font-medium text-gray-700">
-              Alpha
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_gigantamax"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={form.is_gigantamax}
-              onChange={(e) => updateField('is_gigantamax', e.target.checked)}
-            />
-            <label htmlFor="is_gigantamax" className="text-sm font-medium text-gray-700">
-              Gigantamax
-            </label>
-          </div>
-          <div className="col-span-2">
-            <label className={labelClass}>Poke Ball</label>
-            <select
-              className={selectClass}
-              value={form.poke_ball}
-              onChange={(e) => updateField('poke_ball', e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {POKE_BALLS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </fieldset>
-
-      {/* Ribbons/Marks */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Ribbons & Marks</legend>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Ribbons (comma-separated)</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.ribbons}
-              onChange={(e) => updateField('ribbons', e.target.value)}
-              placeholder="e.g. Champion, Tower Master"
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Marks (comma-separated)</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.marks}
-              onChange={(e) => updateField('marks', e.target.value)}
-              placeholder="e.g. Lunchtime Mark, Sleepy Mark"
-            />
-          </div>
-        </div>
-      </fieldset>
+      </div>
 
       {/* Notes */}
-      <fieldset className={sectionClass}>
-        <legend className={sectionTitleClass}>Notes</legend>
+      <div className={sectionClass}>
+        <div className={sectionTitleClass} style={{ top: sectionTop }}>Notes</div>
         <div>
-          <textarea
-            className={inputClass + ' min-h-[80px]'}
-            value={form.notes}
-            onChange={(e) => updateField('notes', e.target.value)}
-            rows={3}
-          />
+          <form.Field name="notes">
+            {(field) => (
+              <textarea
+                className={inputClass + ' min-h-[80px]'}
+                value={field.state.value ?? ''}
+                onChange={(e) => field.handleChange(e.target.value || null)}
+                rows={3}
+              />
+            )}
+          </form.Field>
         </div>
-      </fieldset>
+      </div>
 
-      {/* Submit */}
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting
-            ? (isEdit ? 'Updating...' : 'Creating...')
-            : (isEdit ? 'Update Pokemon' : 'Add Pokemon')}
-        </button>
-        {(createMutation.isError || updateMutation.isError) && (
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
+          <p className="text-sm font-medium text-red-800 mb-1">Please fix the following:</p>
+          <ul className="list-disc list-inside text-sm text-red-600 space-y-0.5">
+            {validationErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Mutation error */}
+      {(createMutation.isError || updateMutation.isError) && (
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
           <p className="text-sm text-red-600">
             {(createMutation.error ?? updateMutation.error)?.message ?? 'An error occurred'}
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </form>
   );
 }

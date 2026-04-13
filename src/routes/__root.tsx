@@ -1,35 +1,32 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { useState } from "react";
+import { createRootRoute, Link, Outlet, type ErrorComponentProps } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PageLayout } from "../components/layout";
 
-const queryClient = new QueryClient();
+function RootErrorComponent({ error }: ErrorComponentProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h1>
+      <p className="text-gray-500 mb-6">{error.message}</p>
+      <Link to="/" className="text-blue-600 hover:text-blue-800 font-medium">
+        Go Home
+      </Link>
+    </div>
+  );
+}
 
 export const Route = createRootRoute({
   component: RootLayout,
+  errorComponent: RootErrorComponent,
 });
 
 function RootLayout() {
+  const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="text-xl font-bold text-gray-900">
-                Pokemon Collection Tracker
-              </Link>
-              <Link
-                to="/collection"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                Collection
-              </Link>
-            </div>
-          </div>
-        </nav>
-        <main className="max-w-7xl mx-auto px-4 py-6">
-          <Outlet />
-        </main>
-      </div>
+      <PageLayout>
+        <Outlet />
+      </PageLayout>
     </QueryClientProvider>
   );
 }

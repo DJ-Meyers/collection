@@ -1,42 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "./client";
-import { pokemonKeys } from "./queryKeys";
-import type { Pokemon, PokemonFilters } from "../../shared/types";
+import { pokemonKeys, collectionKeys } from "./queryKeys";
+import { getAll, getById, getFilterOptions, getOwnerName, loadCollection } from "../store/collection";
+import type { Pokemon, PokemonFilters } from "../data/types";
 
 export function usePokemonList(filters: Partial<PokemonFilters> = {}) {
-  const queryString = buildQueryString(filters);
-  const path = queryString ? `/pokemon?${queryString}` : "/pokemon";
-
   return useQuery({
     queryKey: pokemonKeys.list(filters as Record<string, unknown>),
-    queryFn: () => apiFetch<Pokemon[]>(path),
-    staleTime: 60_000,
+    queryFn: async () => {
+      await loadCollection();
+      return getAll(filters);
+    },
+    staleTime: Infinity,
   });
 }
 
-export function usePokemon(id: number) {
+export function usePokemon(id: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: pokemonKeys.detail(id),
-    queryFn: () => apiFetch<Pokemon>(`/pokemon/${id}`),
-    staleTime: 60_000,
+    queryFn: async () => {
+      await loadCollection();
+      const pokemon = getById(id);
+      if (!pokemon) throw new Error(`Pokemon ${id} not found`);
+      return pokemon;
+    },
+    staleTime: Infinity,
+    enabled: options?.enabled,
   });
 }
 
 export function usePokemonFilters() {
   return useQuery({
     queryKey: pokemonKeys.filters(),
-    queryFn: () =>
-      apiFetch<Record<string, string[]>>("/pokemon/filters"),
-    staleTime: 60_000,
+    queryFn: async () => {
+      await loadCollection();
+      return getFilterOptions();
+    },
+    staleTime: Infinity,
   });
 }
 
-function buildQueryString(filters: Partial<PokemonFilters>): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== null && value !== "") {
-      params.set(key, String(value));
-    }
-  }
-  return params.toString();
+export function useCollectionOwner() {
+  return useQuery({
+    queryKey: collectionKeys.owner(),
+    queryFn: async () => {
+      await loadCollection();
+      return getOwnerName();
+    },
+    staleTime: Infinity,
+  });
 }

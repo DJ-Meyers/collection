@@ -7,3 +7,8 @@ export const pokemonKeys = {
   detail: (id: number) => [...pokemonKeys.details(), id] as const,
   filters: () => [...pokemonKeys.all, "filters"] as const,
 };
+
+export const collectionKeys = {
+  all: ["collection"] as const,
+  owner: () => [...collectionKeys.all, "owner"] as const,
+};
