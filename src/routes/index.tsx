@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { usePokemonList } from "../api/queries";
@@ -20,6 +20,7 @@ const collectionSearchSchema = z.object({
   isEvent: z.boolean().optional(),
   isAlpha: z.boolean().optional(),
   isAvailableForTrade: z.boolean().optional(),
+  gender: z.enum(["Male", "Female", "Genderless"]).optional(),
   isHiddenAbility: z.boolean().optional(),
   tag: z.string().optional(),
   sortBy: z.string().optional(),
@@ -47,6 +48,7 @@ function toApiFilters(search: CollectionSearch): Partial<PokemonFilters> {
   if (search.isAlpha !== undefined) filters.is_alpha = search.isAlpha;
   if (search.isAvailableForTrade !== undefined)
     filters.is_available_for_trade = search.isAvailableForTrade;
+  if (search.gender) filters.gender = search.gender;
   if (search.isHiddenAbility !== undefined)
     filters.is_hidden_ability = search.isHiddenAbility;
   if (search.tag) filters.tag = search.tag;
@@ -66,6 +68,7 @@ function hasActiveFilters(search: CollectionSearch): boolean {
     search.isEvent !== undefined ||
     search.isAlpha !== undefined ||
     search.isAvailableForTrade !== undefined ||
+    search.gender ||
     search.isHiddenAbility !== undefined ||
     search.tag
   );
@@ -74,7 +77,7 @@ function hasActiveFilters(search: CollectionSearch): boolean {
 function CollectionPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/" });
-  const apiFilters = toApiFilters(search);
+  const apiFilters = useMemo(() => toApiFilters(search), [search]);
   const { data: pokemon = [], isLoading } = usePokemonList(apiFilters);
 
   const filtersActive = hasActiveFilters(search);

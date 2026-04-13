@@ -68,6 +68,7 @@ export const pokemonFiltersSchema = z.object({
   is_event: z.boolean().optional(),
   is_alpha: z.boolean().optional(),
   is_available_for_trade: z.boolean().optional(),
+  gender: z.enum(["Male", "Female", "Genderless"]).optional(),
   is_hidden_ability: z.boolean().optional(),
   tag: z.string().optional(),
   sort_by: z.string().default("dex_number"),

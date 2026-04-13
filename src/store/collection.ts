@@ -32,6 +32,7 @@ const ALLOWED_SORT_COLUMNS = [
   "updated_at",
   "is_shiny",
   "is_event",
+  "ot_name",
 ];
 
 const ALPHANUMERIC = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -98,7 +99,7 @@ function ensureLoaded() {
 
 // ---- Filtering & Sorting (ported from server/src/routes/pokemon.ts) ----
 
-function matchesFilters(p: Pokemon, filters: Partial<PokemonFilters>): boolean {
+export function matchesFilters(p: Pokemon, filters: Partial<PokemonFilters>): boolean {
   // Text search across species, nickname, ot_name, tags
   if (filters.search) {
     const q = filters.search.toLowerCase();
@@ -117,6 +118,7 @@ function matchesFilters(p: Pokemon, filters: Partial<PokemonFilters>): boolean {
   const multiFilters: [keyof PokemonFilters, keyof Pokemon][] = [
     ["species", "species"],
     ["nature", "nature"],
+    ["gender", "gender"],
     ["ball", "poke_ball"],
     ["origin_mark", "origin_mark"],
     ["current_location", "current_location"],
@@ -159,7 +161,7 @@ function matchesFilters(p: Pokemon, filters: Partial<PokemonFilters>): boolean {
   return true;
 }
 
-function sortPokemon(
+export function sortPokemon(
   list: Pokemon[],
   sortBy: string = "dex_number",
   sortOrder: string = "asc"
@@ -187,15 +189,9 @@ function sortPokemon(
 
 // ---- CRUD ----
 
-export function getAll(filters: Partial<PokemonFilters> = {}): Pokemon[] {
+export function getAllRaw(): Pokemon[] {
   ensureLoaded();
-  const filtered = data.pokemon.filter((p) => matchesFilters(p, filters));
-  return sortPokemon(filtered, filters.sort_by, filters.sort_order);
-}
-
-export function getById(id: string): Pokemon | undefined {
-  ensureLoaded();
-  return data.pokemon.find((p) => p.id === id);
+  return [...data.pokemon];
 }
 
 export function create(input: CreatePokemon): Pokemon {

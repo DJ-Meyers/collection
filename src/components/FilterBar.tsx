@@ -148,6 +148,7 @@ export function FilterBar() {
     if (search.originMark) count++;
     if (search.ball) count++;
     if (search.currentLocation) count++;
+    if (search.gender) count++;
     if (search.tag) count++;
     if (search.isHiddenAbility) count++;
     return count;
@@ -297,9 +298,24 @@ export function FilterBar() {
                 placeholder="All Locations"
               />
 
+              {/* Gender */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select
+                  value={search.gender ?? ""}
+                  onChange={(e) => setFilter("gender", e.target.value || undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">All Genders</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Genderless">Genderless</option>
+                </select>
+              </div>
+
               {/* Tag typeahead */}
               <div ref={tagContainerRef} className="relative">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Tag</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tag</label>
                 <div className="relative">
                   <input
                     ref={tagInputRef}

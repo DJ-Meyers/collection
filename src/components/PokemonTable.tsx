@@ -1,7 +1,7 @@
 import type React from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Pokemon } from "../data/types";
-import { Badge, BADGE_ICONS, OriginMarkBadge } from "./ui/Badge";
+import { Badge, BADGE_ICONS } from "./ui/Badge";
 import { Sprite } from "./ui/Sprite";
 import { getBallSpriteUrl } from "../data/pokemon-dex";
 
@@ -18,15 +18,15 @@ interface Column {
   key: string;
   label: string;
   sortable: boolean;
+  sortKey?: string;
 }
 
 const COLUMNS: Column[] = [
-  { key: "sprite", label: "", sortable: false },
+  { key: "sprite", label: "#", sortable: true, sortKey: "dex_number" },
   { key: "species", label: "Species", sortable: true },
   { key: "nickname", label: "Nickname", sortable: true },
   { key: "poke_ball", label: "Ball", sortable: true },
-  { key: "ot_name", label: "OT", sortable: true },
-  { key: "origin_mark", label: "Origin", sortable: true },
+  { key: "ot_name", label: "OT/TID", sortable: true },
   { key: "tags", label: "Tags", sortable: false },
 ];
 
@@ -47,6 +47,8 @@ export function PokemonTable({
   onClearFilters,
 }: PokemonTableProps) {
   const navigate = useNavigate({ from: "/" });
+
+  const getSortKey = (col: Column) => col.sortKey ?? col.key;
 
   const handleSort = (columnKey: string) => {
     if (columnKey === sortBy) {
@@ -120,21 +122,21 @@ export function PokemonTable({
                     ? "cursor-pointer select-none hover:text-gray-700 hover:bg-gray-100"
                     : ""
                 }`}
-                onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                onClick={col.sortable ? () => handleSort(getSortKey(col)) : undefined}
                 {...(col.sortable ? {
                   tabIndex: 0,
                   role: "button",
-                  "aria-sort": sortBy === col.key ? (sortOrder === "asc" ? "ascending" : "descending") : "none",
+                  "aria-sort": sortBy === getSortKey(col) ? (sortOrder === "asc" ? "ascending" : "descending") : "none",
                   onKeyDown: (e: React.KeyboardEvent) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      handleSort(col.key);
+                      handleSort(getSortKey(col));
                     }
                   },
                 } as const : {})}
               >
                 {col.label}
-                {col.sortable && sortBy === col.key && (
+                {col.sortable && sortBy === getSortKey(col) && (
                   <SortArrow direction={sortOrder} />
                 )}
               </th>
@@ -164,6 +166,8 @@ export function PokemonTable({
               <td className="px-3 py-1 text-sm text-gray-900 font-medium whitespace-nowrap">
                 <span className="inline-flex items-center gap-1.5">
                   {p.species}
+                  {p.gender === "Male" && <span className="text-[rgb(73,159,255)]">♂</span>}
+                  {p.gender === "Female" && <span className="text-[rgb(246,129,74)]">♀</span>}
                   {p.is_available_for_trade && <Badge variant="trade" icon={BADGE_ICONS.trade} iconOnly />}
                   {p.is_shiny && <Badge variant="shiny" icon={BADGE_ICONS.shiny} iconOnly />}
                   {p.is_event && <Badge variant="event" icon={BADGE_ICONS.event} iconOnly />}
@@ -185,14 +189,9 @@ export function PokemonTable({
                 ) : "-"}
               </td>
               <td className="px-3 py-1 text-sm text-gray-600">
-                {p.ot_name ?? "-"}
-              </td>
-              <td className="px-3 py-1 text-sm text-gray-600">
-                {p.origin_mark ? (
-                  <div className="flex justify-center">
-                    <OriginMarkBadge value={p.origin_mark} showLabel={false} />
-                  </div>
-                ) : "-"}
+                {p.ot_name || p.ot_tid
+                  ? [p.ot_name, p.ot_tid].filter(Boolean).join("/")
+                  : "-"}
               </td>
               <td className="px-3 py-1 text-sm text-gray-600">
                 {p.tags && p.tags.length > 0 ? (

@@ -1,29 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { pokemonKeys, collectionKeys } from "./queryKeys";
-import { getAll, getById, getFilterOptions, getOwnerName, loadCollection } from "../store/collection";
+import { getAllRaw, getFilterOptions, getOwnerName, loadCollection, matchesFilters, sortPokemon } from "../store/collection";
 import type { Pokemon, PokemonFilters } from "../data/types";
 
-export function usePokemonList(filters: Partial<PokemonFilters> = {}) {
-  return useQuery({
-    queryKey: pokemonKeys.list(filters as Record<string, unknown>),
-    queryFn: async () => {
-      await loadCollection();
-      return getAll(filters);
+const allPokemonOptions = queryOptions({
+  queryKey: pokemonKeys.list(),
+  queryFn: async () => {
+    await loadCollection();
+    return getAllRaw();
+  },
+  staleTime: Infinity,
+});
+
+export function usePokemonList(filters: Partial<PokemonFilters>) {
+  const select = useCallback(
+    (pokemon: Pokemon[]) => {
+      const filtered = pokemon.filter((p) => matchesFilters(p, filters));
+      return sortPokemon(filtered, filters.sort_by, filters.sort_order);
     },
-    staleTime: Infinity,
-  });
+    [filters],
+  );
+  return useQuery({ ...allPokemonOptions, select });
 }
 
 export function usePokemon(id: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: pokemonKeys.detail(id),
-    queryFn: async () => {
-      await loadCollection();
-      const pokemon = getById(id);
-      if (!pokemon) throw new Error(`Pokemon ${id} not found`);
-      return pokemon;
-    },
-    staleTime: Infinity,
+    ...allPokemonOptions,
+    select: (pokemon) => pokemon.find((p) => p.id === id),
     enabled: options?.enabled,
   });
 }

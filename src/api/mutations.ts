@@ -11,9 +11,11 @@ export function useCreatePokemon() {
       await loadCollection();
       return create(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
+    onSettled: () => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.list() }),
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() }),
+      ]);
     },
   });
 }
@@ -26,10 +28,11 @@ export function useUpdatePokemon() {
       await loadCollection();
       return update(id, data);
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
+    onSettled: () => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.list() }),
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() }),
+      ]);
     },
   });
 }
@@ -42,10 +45,11 @@ export function useDeletePokemon() {
       await loadCollection();
       remove(id);
     },
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() });
+    onSettled: () => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.list() }),
+        queryClient.invalidateQueries({ queryKey: pokemonKeys.filters() }),
+      ]);
     },
   });
 }

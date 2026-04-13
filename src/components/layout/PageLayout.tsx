@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { useCollectionOwner } from "../../api/queries";
 
-const NAV_HEIGHT = 53;
 const PageHeaderPortalContext = createContext<HTMLDivElement | null>(null);
 const StickyOffsetContext = createContext<number>(0);
 
@@ -22,7 +21,7 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
   const [headerEl, setHeaderEl] = useState<HTMLDivElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
   const [hasContent, setHasContent] = useState(false);
-  const [stickyOffset, setStickyOffset] = useState(NAV_HEIGHT);
+  const [stickyOffset, setStickyOffset] = useState(0);
   const headerWrapperRef = useRef<HTMLDivElement | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
@@ -34,7 +33,7 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
     headerWrapperRef.current = node;
     if (node) {
       const update = () => {
-        setStickyOffset(NAV_HEIGHT + node.offsetHeight);
+        setStickyOffset(node.offsetHeight);
       };
       resizeObserverRef.current = new ResizeObserver(update);
       resizeObserverRef.current.observe(node);
@@ -61,8 +60,8 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <PageHeaderPortalContext.Provider value={headerEl}>
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <nav className="sticky top-0 z-20 flex-shrink-0 bg-white shadow-sm border-b border-gray-200">
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+        <nav className="flex-shrink-0 bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex items-center gap-6">
               <Link to="/" className="text-xl font-bold text-gray-900">
@@ -71,17 +70,16 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </nav>
-        <div
-          ref={headerWrapperCallback}
-          className={`flex-shrink-0 ${hasContent ? "sticky z-30 bg-gray-50" : ""}`}
-          style={hasContent ? { top: NAV_HEIGHT } : undefined}
-        >
+        <main className="flex-1 overflow-y-auto">
           <div
-            ref={headerRef}
-            className="max-w-4xl mx-auto px-4 py-3 space-y-3"
-          />
-        </div>
-        <main className="flex-1">
+            ref={headerWrapperCallback}
+            className={`${hasContent ? "sticky top-0 z-30 bg-gray-50" : ""}`}
+          >
+            <div
+              ref={headerRef}
+              className="max-w-4xl mx-auto px-4 py-3 space-y-3"
+            />
+          </div>
           <StickyOffsetContext.Provider value={stickyOffset}>
             <div className="max-w-4xl mx-auto px-4 pt-2 pb-6">{children}</div>
           </StickyOffsetContext.Provider>

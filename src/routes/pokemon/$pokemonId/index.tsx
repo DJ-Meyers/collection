@@ -5,7 +5,7 @@ import { usePokemon } from '../../../api/queries';
 import { useDeletePokemon } from '../../../api/mutations';
 import { PokemonPreview } from '../../../components/PokemonForm';
 import { OriginMarkBadge } from '../../../components/ui/Badge';
-import { DetailSection, DetailGrid, DetailField, LoadingSpinner, NotFound, PageHeader, Card, useStickyOffset } from '../../../components/layout';
+import { DetailSection, DetailGrid, DetailField, LoadingSpinner, NotFound, PageHeader, Card } from '../../../components/layout';
 import { Button } from '../../../components/ui/Button';
 import { GAME_LOCATIONS } from '../../../data/constants';
 import { getSpeciesInfo, getShowdownSpriteUrl, getBallSpriteUrl } from '../../../data/pokemon-dex';
@@ -27,7 +27,6 @@ function PokemonDetailPage() {
   const navigate = useNavigate();
   const { data: pokemon, isLoading, isError } = usePokemon(pokemonId);
   const deleteMutation = useDeletePokemon();
-  const stickyOffset = useStickyOffset();
 
   function handleDelete() {
     if (!pokemon) return;
@@ -88,27 +87,24 @@ function PokemonDetailPage() {
             </Link>
           </div>
         </div>
+        <Card className="px-4 py-3">
+          <PokemonPreview
+            speciesValue={pokemon.species}
+            formValue={pokemon.form ?? null}
+            nickname={pokemon.nickname ?? null}
+            spriteUrl={spriteUrl}
+            ballSpriteUrl={ballSpriteUrl}
+            pokeBall={pokemon.poke_ball ?? null}
+            isShiny={pokemon.is_shiny}
+            isAlpha={pokemon.is_alpha}
+            isEvent={pokemon.is_event}
+            isAvailableForTrade={pokemon.is_available_for_trade}
+            locationBoxArt={locationBoxArt}
+            currentLocation={pokemon.current_location ?? null}
+            originMark={pokemon.origin_mark ?? null}
+          />
+        </Card>
       </PageHeader>
-
-      <div className="sticky z-10 bg-gray-50" style={{ top: stickyOffset }}>
-      <Card className="px-4 py-3 mb-6">
-        <PokemonPreview
-          speciesValue={pokemon.species}
-          formValue={pokemon.form ?? null}
-          nickname={pokemon.nickname ?? null}
-          spriteUrl={spriteUrl}
-          ballSpriteUrl={ballSpriteUrl}
-          pokeBall={pokemon.poke_ball ?? null}
-          isShiny={pokemon.is_shiny}
-          isAlpha={pokemon.is_alpha}
-          isEvent={pokemon.is_event}
-          isAvailableForTrade={pokemon.is_available_for_trade}
-          locationBoxArt={locationBoxArt}
-          currentLocation={pokemon.current_location ?? null}
-          originMark={pokemon.origin_mark ?? null}
-        />
-      </Card>
-      </div>
 
       {deleteMutation.isError && (
         <p className="mb-4 text-sm text-red-600">
