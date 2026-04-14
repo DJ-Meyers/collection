@@ -10,7 +10,6 @@ import type {
 const collectionDataSchema = z.object({
   meta: z.object({
     version: z.number(),
-    github_username: z.string(),
     display_name: z.string(),
   }),
   pokemon: z.array(pokemonSchema),
@@ -56,7 +55,7 @@ function generateUniqueId(): string {
 }
 
 let data: CollectionData = {
-  meta: { version: 1, github_username: "", display_name: "" },
+  meta: { version: 1, display_name: "" },
   pokemon: [],
 };
 
