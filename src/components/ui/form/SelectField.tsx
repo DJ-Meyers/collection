@@ -101,6 +101,8 @@ function ImageSelect({
   const [focusIndex, setFocusIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const typeaheadRef = useRef('');
+  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const selected = options.find((o) => o.value === value);
 
@@ -158,6 +160,25 @@ function ImageSelect({
       case 'Escape':
         e.preventDefault();
         close();
+        break;
+      default:
+        // Type-ahead: match options by typed characters
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          clearTimeout(typeaheadTimerRef.current);
+          typeaheadRef.current += e.key.toLowerCase();
+          typeaheadTimerRef.current = setTimeout(() => { typeaheadRef.current = ''; }, 500);
+          const match = options.findIndex((o) =>
+            o.label.toLowerCase().startsWith(typeaheadRef.current),
+          );
+          if (match >= 0) {
+            if (open) {
+              setFocusIndex(match);
+            } else {
+              onChange(options[match].value);
+            }
+          }
+        }
         break;
     }
   }
