@@ -8,7 +8,7 @@ import { getAuthSnapshot, useAuth } from '../../../auth/AuthContext';
 
 const pokemonIdParam = z.string().regex(/^[a-z0-9]{4}$/);
 
-export const Route = createFileRoute('/pokemon/$pokemonId/edit')({
+export const Route = createFileRoute('/p/$pokemonId/edit')({
   beforeLoad: ({ params }) => {
     const result = pokemonIdParam.safeParse(params.pokemonId);
     if (!result.success) {
@@ -30,11 +30,11 @@ function PokemonEditPage() {
   const { data: pokemon, isLoading, isError } = usePokemon(pokemonId);
 
   function handleCancel() {
-    navigate({ to: '/pokemon/$pokemonId', params: { pokemonId } });
+    navigate({ to: '/p/$pokemonId', params: { pokemonId } });
   }
 
   function handleSuccess() {
-    navigate({ to: '/pokemon/$pokemonId', params: { pokemonId } });
+    navigate({ to: '/p/$pokemonId', params: { pokemonId } });
   }
 
   if (!canEdit) {

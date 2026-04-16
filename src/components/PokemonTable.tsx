@@ -208,7 +208,7 @@ export function PokemonTable({
                 if (selectable && selectedIds && selectedIds.size > 0) {
                   handleRowSelect(p.id, e);
                 } else {
-                  navigate({ to: '/pokemon/$pokemonId', params: { pokemonId: p.id } });
+                  navigate({ to: '/p/$pokemonId', params: { pokemonId: p.id } });
                 }
               }}
               onKeyDown={(e) => {
@@ -217,7 +217,7 @@ export function PokemonTable({
                   if (selectable && selectedIds && selectedIds.size > 0) {
                     handleRowSelect(p.id, e as unknown as React.MouseEvent);
                   } else {
-                    navigate({ to: '/pokemon/$pokemonId', params: { pokemonId: p.id } });
+                    navigate({ to: '/p/$pokemonId', params: { pokemonId: p.id } });
                   }
                 }
               }}

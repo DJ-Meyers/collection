@@ -10,72 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PokemonNewRouteImport } from './routes/pokemon/new'
-import { Route as PokemonPokemonIdIndexRouteImport } from './routes/pokemon/$pokemonId/index'
-import { Route as PokemonPokemonIdEditRouteImport } from './routes/pokemon/$pokemonId/edit'
+import { Route as PNewRouteImport } from './routes/p/new'
+import { Route as PPokemonIdIndexRouteImport } from './routes/p/$pokemonId/index'
+import { Route as PPokemonIdEditRouteImport } from './routes/p/$pokemonId/edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PokemonNewRoute = PokemonNewRouteImport.update({
-  id: '/pokemon/new',
-  path: '/pokemon/new',
+const PNewRoute = PNewRouteImport.update({
+  id: '/p/new',
+  path: '/p/new',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PokemonPokemonIdIndexRoute = PokemonPokemonIdIndexRouteImport.update({
-  id: '/pokemon/$pokemonId/',
-  path: '/pokemon/$pokemonId/',
+const PPokemonIdIndexRoute = PPokemonIdIndexRouteImport.update({
+  id: '/p/$pokemonId/',
+  path: '/p/$pokemonId/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PokemonPokemonIdEditRoute = PokemonPokemonIdEditRouteImport.update({
-  id: '/pokemon/$pokemonId/edit',
-  path: '/pokemon/$pokemonId/edit',
+const PPokemonIdEditRoute = PPokemonIdEditRouteImport.update({
+  id: '/p/$pokemonId/edit',
+  path: '/p/$pokemonId/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/pokemon/new': typeof PokemonNewRoute
-  '/pokemon/$pokemonId/edit': typeof PokemonPokemonIdEditRoute
-  '/pokemon/$pokemonId/': typeof PokemonPokemonIdIndexRoute
+  '/p/new': typeof PNewRoute
+  '/p/$pokemonId/edit': typeof PPokemonIdEditRoute
+  '/p/$pokemonId/': typeof PPokemonIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/pokemon/new': typeof PokemonNewRoute
-  '/pokemon/$pokemonId/edit': typeof PokemonPokemonIdEditRoute
-  '/pokemon/$pokemonId': typeof PokemonPokemonIdIndexRoute
+  '/p/new': typeof PNewRoute
+  '/p/$pokemonId/edit': typeof PPokemonIdEditRoute
+  '/p/$pokemonId': typeof PPokemonIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/pokemon/new': typeof PokemonNewRoute
-  '/pokemon/$pokemonId/edit': typeof PokemonPokemonIdEditRoute
-  '/pokemon/$pokemonId/': typeof PokemonPokemonIdIndexRoute
+  '/p/new': typeof PNewRoute
+  '/p/$pokemonId/edit': typeof PPokemonIdEditRoute
+  '/p/$pokemonId/': typeof PPokemonIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/pokemon/new'
-    | '/pokemon/$pokemonId/edit'
-    | '/pokemon/$pokemonId/'
+  fullPaths: '/' | '/p/new' | '/p/$pokemonId/edit' | '/p/$pokemonId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pokemon/new' | '/pokemon/$pokemonId/edit' | '/pokemon/$pokemonId'
-  id:
-    | '__root__'
-    | '/'
-    | '/pokemon/new'
-    | '/pokemon/$pokemonId/edit'
-    | '/pokemon/$pokemonId/'
+  to: '/' | '/p/new' | '/p/$pokemonId/edit' | '/p/$pokemonId'
+  id: '__root__' | '/' | '/p/new' | '/p/$pokemonId/edit' | '/p/$pokemonId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PokemonNewRoute: typeof PokemonNewRoute
-  PokemonPokemonIdEditRoute: typeof PokemonPokemonIdEditRoute
-  PokemonPokemonIdIndexRoute: typeof PokemonPokemonIdIndexRoute
+  PNewRoute: typeof PNewRoute
+  PPokemonIdEditRoute: typeof PPokemonIdEditRoute
+  PPokemonIdIndexRoute: typeof PPokemonIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -87,25 +78,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pokemon/new': {
-      id: '/pokemon/new'
-      path: '/pokemon/new'
-      fullPath: '/pokemon/new'
-      preLoaderRoute: typeof PokemonNewRouteImport
+    '/p/new': {
+      id: '/p/new'
+      path: '/p/new'
+      fullPath: '/p/new'
+      preLoaderRoute: typeof PNewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pokemon/$pokemonId/': {
-      id: '/pokemon/$pokemonId/'
-      path: '/pokemon/$pokemonId'
-      fullPath: '/pokemon/$pokemonId/'
-      preLoaderRoute: typeof PokemonPokemonIdIndexRouteImport
+    '/p/$pokemonId/': {
+      id: '/p/$pokemonId/'
+      path: '/p/$pokemonId'
+      fullPath: '/p/$pokemonId/'
+      preLoaderRoute: typeof PPokemonIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pokemon/$pokemonId/edit': {
-      id: '/pokemon/$pokemonId/edit'
-      path: '/pokemon/$pokemonId/edit'
-      fullPath: '/pokemon/$pokemonId/edit'
-      preLoaderRoute: typeof PokemonPokemonIdEditRouteImport
+    '/p/$pokemonId/edit': {
+      id: '/p/$pokemonId/edit'
+      path: '/p/$pokemonId/edit'
+      fullPath: '/p/$pokemonId/edit'
+      preLoaderRoute: typeof PPokemonIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -113,9 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PokemonNewRoute: PokemonNewRoute,
-  PokemonPokemonIdEditRoute: PokemonPokemonIdEditRoute,
-  PokemonPokemonIdIndexRoute: PokemonPokemonIdIndexRoute,
+  PNewRoute: PNewRoute,
+  PPokemonIdEditRoute: PPokemonIdEditRoute,
+  PPokemonIdIndexRoute: PPokemonIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

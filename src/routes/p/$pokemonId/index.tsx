@@ -14,7 +14,7 @@ import { assetUrl } from '../../../assetUrl';
 
 const pokemonIdParam = z.string().regex(/^[a-z0-9]{4}$/);
 
-export const Route = createFileRoute('/pokemon/$pokemonId/')({
+export const Route = createFileRoute('/p/$pokemonId/')({
   beforeLoad: ({ params }) => {
     const result = pokemonIdParam.safeParse(params.pokemonId);
     if (!result.success) {
@@ -85,7 +85,7 @@ function PokemonDetailPage() {
               <Button type="button" variant="danger" rank="secondary" onClick={handleDelete} disabled={deleteMutation.isPending}>
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
               </Button>
-              <Link to="/pokemon/$pokemonId/edit" params={{ pokemonId }}>
+              <Link to="/p/$pokemonId/edit" params={{ pokemonId }}>
                 <Button type="button">
                   Edit
                 </Button>

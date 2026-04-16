@@ -6,7 +6,7 @@ import { PageHeader } from "../../components/layout";
 import { Button } from "../../components/ui/Button";
 import { getAuthSnapshot, useAuth } from "../../auth/AuthContext";
 
-export const Route = createFileRoute("/pokemon/new")({
+export const Route = createFileRoute("/p/new")({
   beforeLoad: () => {
     const snap = getAuthSnapshot();
     if (!snap.isLoading && !(snap.user && snap.isOwner)) {

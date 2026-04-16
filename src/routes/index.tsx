@@ -128,7 +128,7 @@ function CollectionPage() {
       <PageHeader>
         <div className="flex items-center justify-end min-h-[38px]">
           {canEdit && (
-            <Link to="/pokemon/new">
+            <Link to="/p/new">
               <Button type="button">
                 + Add Pokemon
               </Button>
