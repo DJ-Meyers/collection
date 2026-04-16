@@ -104,6 +104,7 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
                       src={user.avatar_url}
                       alt={user.login}
                       className="w-7 h-7 rounded-full"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                     <span className="text-sm text-gray-600">{user.login}</span>
                     <button

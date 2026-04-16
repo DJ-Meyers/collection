@@ -4,6 +4,7 @@ import { useStore } from '@tanstack/react-store';
 import type { Pokemon } from '../data/types';
 import { createPokemonSchema } from '../data/schemas';
 import { useCreatePokemon, useUpdatePokemon } from '../api/mutations';
+import { usePokemonFilters } from '../api/queries';
 import { NATURES, LANGUAGES, GENDERS, GAME_LOCATIONS } from '../data/constants';
 import { getSpeciesInfo, getShowdownSpriteUrl, getBallSpriteUrl, type SpeciesInfo } from '../data/pokemon-dex';
 import { Badge, BADGE_ICONS, OriginMarkBadge } from './ui/Badge';
@@ -15,6 +16,8 @@ import { OriginSelect } from './ui/form/OriginSelect';
 import { SelectField, type SelectOption } from './ui/form/SelectField';
 import { SpeciesTypeahead } from './ui/form/SpeciesTypeahead';
 import { TextField } from './ui/form/TextField';
+import { ChipInput } from './ui/form/ChipInput';
+import { ALL_RIBBONS_AND_MARKS } from '../data/ribbons-marks';
 import { inputClass, labelClass, errorClass, selectClass } from './ui/form/styles';
 
 export type SubmitMode = 'save' | 'add-another';
@@ -50,8 +53,7 @@ interface FormValues {
   is_alpha: boolean;
   is_available_for_trade: boolean;
   poke_ball: string | null;
-  ribbons: string[];
-  marks: string[];
+  ribbons_and_marks: string[];
   tags: string[];
   notes: string | null;
 }
@@ -169,8 +171,7 @@ function buildDefaultValues(pokemon?: Pokemon): FormValues {
 
     is_available_for_trade: pokemon?.is_available_for_trade ?? false,
     poke_ball: pokemon?.poke_ball ?? 'Poke Ball',
-    ribbons: pokemon?.ribbons ?? [],
-    marks: pokemon?.marks ?? [],
+    ribbons_and_marks: [...(pokemon?.ribbons ?? []), ...(pokemon?.marks ?? [])],
     tags: pokemon?.tags ?? [],
     notes: pokemon?.notes ?? null,
   };
@@ -186,10 +187,11 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
   const isEdit = !!pokemon;
   const createMutation = useCreatePokemon();
   const updateMutation = useUpdatePokemon();
+  const { data: filterOptions } = usePokemonFilters();
+  const existingTags = filterOptions?.tags ?? [];
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [tagsTouched, setTagsTouched] = useState(false);
 
   const form = useForm({
     defaultValues: buildDefaultValues(pokemon),
@@ -198,7 +200,13 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
       // Reset mode back to default after reading
       if (submitModeRef) submitModeRef.current = 'save';
 
-      const result = createPokemonSchema.safeParse(value);
+      // Split combined field back into ribbons and marks for the schema
+      const { ribbons_and_marks, ...rest } = value;
+      const ribbons = ribbons_and_marks.filter((v) => v.endsWith('Ribbon'));
+      const marks = ribbons_and_marks.filter((v) => v.endsWith('Mark'));
+      const submitValue = { ...rest, ribbons, marks };
+
+      const result = createPokemonSchema.safeParse(submitValue);
       if (!result.success) {
         setValidationErrors(result.error.issues.map((i) => i.message));
         return;
@@ -219,7 +227,7 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
               (fresh as any)[key] = value[key];
             }
             form.reset(fresh);
-            setTagsTouched(false);
+
             onAddAnother?.({ species: value.species, nickname: value.nickname });
           },
         });
@@ -484,7 +492,7 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
             </form.Field>
           </div>
           <div className="col-span-2 grid grid-cols-4 gap-4">
-            {(['is_shiny', 'is_event', 'is_alpha', 'is_available_for_trade'] as const).map((name) => (
+            {(['is_available_for_trade', 'is_shiny', 'is_event', 'is_alpha'] as const).map((name) => (
               <div key={name} className="flex items-center gap-2">
                 <form.Field name={name}>
                   {(field) => (
@@ -497,7 +505,7 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
                         onChange={(e) => field.handleChange(e.target.checked)}
                       />
                       <label htmlFor={name} className="text-sm font-medium text-gray-700">
-                        {name === 'is_shiny' ? 'Shiny' : name === 'is_event' ? 'Event' : name === 'is_alpha' ? 'Alpha' : 'For Trade'}
+                        {name === 'is_available_for_trade' ? 'Available for Trade' : name === 'is_shiny' ? 'Shiny' : name === 'is_event' ? 'Event' : 'Alpha'}
                       </label>
                     </>
                   )}
@@ -506,74 +514,30 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
             ))}
           </div>
           <div>
-            <form.Field name="ribbons">
+            <form.Field name="ribbons_and_marks">
               {(field) => (
-                <>
-                  <label className={labelClass}>Ribbons (comma-separated)</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={field.state.value.join(', ')}
-                    onChange={(e) =>
-                      field.handleChange(
-                        e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
-                      )
-                    }
-                    placeholder="e.g. Champion, Tower Master"
-                  />
-                </>
+                <ChipInput
+                  label="Ribbons / Marks"
+                  values={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  suggestions={ALL_RIBBONS_AND_MARKS}
+                  placeholder="Type to search ribbons & marks"
+                />
               )}
             </form.Field>
           </div>
           <div>
-            <form.Field name="marks">
-              {(field) => (
-                <>
-                  <label className={labelClass}>Marks (comma-separated)</label>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={field.state.value.join(', ')}
-                    onChange={(e) =>
-                      field.handleChange(
-                        e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
-                      )
-                    }
-                    placeholder="e.g. Lunchtime Mark, Sleepy Mark"
-                  />
-                </>
-              )}
-            </form.Field>
-          </div>
-          <div className="col-span-2">
             <form.Field name="tags">
-              {(field) => {
-                const hasError = tagsTouched && field.state.value.some(
-                  (t) => !/^[a-z]([a-z-]*[a-z])?$/.test(t),
-                );
-                return (
-                  <>
-                    <label className={labelClass}>Tags (comma-separated)</label>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={field.state.value.join(', ')}
-                      onChange={(e) =>
-                        field.handleChange(
-                          e.target.value ? e.target.value.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) : [],
-                        )
-                      }
-                      onBlur={() => setTagsTouched(true)}
-                      placeholder="e.g. battle-ready, available-for-trade"
-                    />
-                    {hasError && (
-                      <p className={errorClass}>
-                        Tags must be lowercase letters and dashes, starting and ending with a letter.
-                      </p>
-                    )}
-                  </>
-                );
-              }}
+              {(field) => (
+                <ChipInput
+                  label="Tags"
+                  values={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  suggestions={existingTags}
+                  tagMode
+                  placeholder="Type and press Enter"
+                />
+              )}
             </form.Field>
           </div>
         </div>
