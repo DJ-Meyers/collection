@@ -6,29 +6,33 @@ A static site for tracking your Pokemon collection. Runs on GitHub Pages and use
 
 ### 1. Fork the repository
 
-### 2. Enable GitHub Actions
+![Fork the repository](docs/images/step1-fork.png)
+
+### 2. Enable GitHub Pages
+
+Go to **Settings > Pages**, and select **GitHub Actions** under **Source**.
+
+![Enable GitHub Pages](docs/images/step2-pages.png)
+
+### 3. Enable GitHub Actions
 
 Go to the **Actions** tab on your fork and enable workflows.
 
-### 3. Enable GitHub Pages
+![Enable GitHub Actions](docs/images/step3-actions.png)
 
-1. Go to **Settings > Pages**
-2. Under **Source**, select **GitHub Actions**
+### 4. Deploy the site
 
-Then run the deploy workflow from the **Actions** tab (or push a commit to `main`).
+Go to the **Deploy to GitHub Pages** action and click **Run workflow**
 
-### 4. Create a GitHub Personal Access Token
+![Deploy the site](docs/images/step4-deploy.png)
 
-1. Go to [Fine-grained personal access tokens](https://github.com/settings/personal-access-tokens/new)
-2. Under **Repository access**, select **Only select repositories** and pick your fork
-3. Under **Permissions > Repository permissions**, set **Contents** to **Read and write**
-4. Generate the token and copy it
+### 5. Authenticate
 
-### 5. Log in
-
-Go to `https://<your-username>.github.io/<repo-name>/` and enter your token.
+Go to `https://<your-username>.github.io/collection/` and click **Sign in to edit** and follow the instructions to begin managing your collection
 
 ## How it works
+
+The app uses a fine-grained PAT to commit collection data back to your fork via the GitHub API. Your token stays in your browser's localStorage and is sent directly to GitHub over HTTPS — there is no backend. The token is scoped to a single repo with minimal permissions.
 
 - Collection data lives in `public/data/collection.json` in your repo
 - The app loads this file on page load

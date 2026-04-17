@@ -62,15 +62,20 @@ export function SetupGuide({ onClose }: { onClose: () => void }) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="password"
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-              placeholder="github_pat_xxxxxxxxxxxxxxxxxxxx"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              autoFocus
-              disabled={isLoading}
-            />
+            <div>
+              <input
+                type="password"
+                value={pat}
+                onChange={(e) => setPat(e.target.value)}
+                placeholder="github_pat_xxxxxxxxxxxxxxxxxxxx"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                autoFocus
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Your token is stored in your browser's localStorage and sent directly to the GitHub API over HTTPS. There is no backend; your token is never collected outside of your own browser and never sent anywhere except the GitHub API.
+              </p>
+            </div>
             <div className="flex gap-3 justify-end">
               <Button type="button" rank="secondary" onClick={onClose}>
                 Cancel
