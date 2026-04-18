@@ -17,6 +17,7 @@ import { SelectField, type SelectOption } from './ui/form/SelectField';
 import { SpeciesTypeahead } from './ui/form/SpeciesTypeahead';
 import { TextField } from './ui/form/TextField';
 import { ChipInput } from './ui/form/ChipInput';
+import { TextTypeahead } from './ui/form/TextTypeahead';
 import { ALL_RIBBONS_AND_MARKS } from '../data/ribbons-marks';
 import { inputClass, labelClass, errorClass, selectClass } from './ui/form/styles';
 
@@ -186,6 +187,8 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
   const updateMutation = useUpdatePokemon();
   const { data: filterOptions } = usePokemonFilters();
   const existingTags = filterOptions?.tags ?? [];
+  const existingOtNames = filterOptions?.ot_name ?? [];
+  const existingOtTids = filterOptions?.ot_tid ?? [];
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -546,10 +549,11 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
           <div>
             <form.Field name="ot_name">
               {(field) => (
-                <TextField
+                <TextTypeahead
                   label="OT Name"
                   value={field.state.value}
                   onChange={(v) => field.handleChange(v)}
+                  suggestions={existingOtNames}
                 />
               )}
             </form.Field>
@@ -557,10 +561,11 @@ export function PokemonForm({ pokemon, formId, onSuccess, submitModeRef, onAddAn
           <div>
             <form.Field name="ot_tid">
               {(field) => (
-                <TextField
+                <TextTypeahead
                   label="Trainer ID"
                   value={field.state.value}
                   onChange={(v) => field.handleChange(v)}
+                  suggestions={existingOtTids}
                 />
               )}
             </form.Field>

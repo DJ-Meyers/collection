@@ -310,6 +310,8 @@ export function getFilterOptions(): Record<string, string[]> {
     origin_mark: unique("origin_mark"),
     current_location: unique("current_location"),
     language_tag: unique("language_tag"),
+    ot_name: unique("ot_name"),
+    ot_tid: unique("ot_tid"),
     tags: [...tagSet].sort(),
   };
 }
